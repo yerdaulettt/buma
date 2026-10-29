@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"buma/internal/httphandler"
 	"buma/internal/image"
+	"buma/internal/postgres"
 	"buma/internal/s3repo"
 
 	"github.com/joho/godotenv"
@@ -14,7 +16,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	ctx := context.Background()
@@ -24,14 +26,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+	pgUrl := os.Getenv("PG_URL")
+	db, err := postgres.NewPostgresPool(ctx, pgUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	s3rep := s3repo.NewS3Repository(client)
 
-	imageS := image.NewImageService(nil, s3rep)
+	imageR := postgres.NewImageRepo(db)
+	imageS := image.NewImageService(imageR, s3rep)
 	imageH := httphandler.NewImageHandler(imageS)
 
 	r := http.NewServeMux()
 
 	r.HandleFunc("POST /upload", imageH.Upload)
+	r.HandleFunc("GET /my/images", imageH.GetImages)
 	r.HandleFunc("DELETE /images/{name}", imageH.DeleteImage)
 
 	log.Fatal(http.ListenAndServe(":8080", r))

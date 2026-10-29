@@ -4,24 +4,28 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type s3Repository struct {
-	client *s3.Client
+	client    *s3.Client
+	presigner *s3.PresignClient
 }
 
 func NewS3Repository(c *s3.Client) *s3Repository {
-	return &s3Repository{client: c}
+	return &s3Repository{client: c, presigner: s3.NewPresignClient(c)}
 }
 
 func (s *s3Repository) PutObject(ctx context.Context, bucket, key string, object []byte) error {
 	param := &s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-		Body:   bytes.NewReader(object),
+		Bucket:               aws.String(bucket),
+		Key:                  aws.String(key),
+		Body:                 bytes.NewReader(object),
+		ServerSideEncryption: types.ServerSideEncryptionAes256,
 	}
 
 	output, err := s.client.PutObject(ctx, param)
@@ -32,6 +36,22 @@ func (s *s3Repository) PutObject(ctx context.Context, bucket, key string, object
 	log.Println(output.ResultMetadata)
 
 	return nil
+}
+
+func (s *s3Repository) GetObjectUrl(ctx context.Context, bucket, key string, limit time.Duration) (string, error) {
+	param := &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+
+	result, err := s.presigner.PresignGetObject(ctx, param, func(po *s3.PresignOptions) {
+		po.Expires = limit
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return result.URL, nil
 }
 
 func (s *s3Repository) DeleteObject(ctx context.Context, bucket, key string) error {

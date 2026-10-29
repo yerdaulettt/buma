@@ -1,6 +1,7 @@
 package httphandler
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -29,7 +30,31 @@ func (h *imageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.Upload(r.Context(), "test123", handler.Filename, data)
+	imageType := http.DetectContentType(data)
+
+	err = checkContentType(imageType)
+	if err != nil {
+		httpError(w, err)
+		return
+	}
+
+	err = h.service.Upload(r.Context(), "images", handler.Filename, imageType, data)
+	if err != nil {
+		httpError(w, err)
+		return
+	}
+}
+
+func (h *imageHandler) GetImages(w http.ResponseWriter, r *http.Request) {
+	images, err := h.service.GetImages(r.Context(), 1)
+	if err != nil {
+		httpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(&images)
 	if err != nil {
 		httpError(w, err)
 		return
@@ -39,7 +64,7 @@ func (h *imageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 func (h *imageHandler) DeleteImage(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 
-	err := h.service.DeleteImage(r.Context(), "test123", name)
+	err := h.service.DeleteImage(r.Context(), "images", name)
 	if err != nil {
 		httpError(w, err)
 		return
