@@ -28,7 +28,7 @@ func (r *imageRepo) AddMetadata(ctx context.Context, userId int, imageType, key 
 }
 
 func (r *imageRepo) GetMetadata(ctx context.Context, userId int) ([]image.ImageMetadata, error) {
-	query := `select id, added_at, s3_key, user_id from images where user_id = $1`
+	query := `select id, image_type, s3_key, added_at, user_id from images where user_id = $1`
 
 	var mdata []image.ImageMetadata
 
@@ -41,7 +41,7 @@ func (r *imageRepo) GetMetadata(ctx context.Context, userId int) ([]image.ImageM
 	for rows.Next() {
 		var m image.ImageMetadata
 
-		if err := rows.Scan(&m.Id, &m.AddedAt, &m.Key, &m.UserId); err != nil {
+		if err := rows.Scan(&m.Id, &m.Type, &m.Key, &m.AddedAt, &m.UserId); err != nil {
 			return nil, err
 		}
 
@@ -49,4 +49,15 @@ func (r *imageRepo) GetMetadata(ctx context.Context, userId int) ([]image.ImageM
 	}
 
 	return mdata, nil
+}
+
+func (r *imageRepo) DeleteMetadata(ctx context.Context, key string) error {
+	query := "delete from images where s3_key = $1"
+
+	_, err := r.db.Exec(ctx, query, key)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

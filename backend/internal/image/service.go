@@ -8,6 +8,7 @@ import (
 type imageRepository interface {
 	AddMetadata(ctx context.Context, userId int, imageType, key string) error
 	GetMetadata(ctx context.Context, userId int) ([]ImageMetadata, error)
+	DeleteMetadata(ctx context.Context, key string) error
 }
 
 type s3Repository interface {
@@ -25,7 +26,9 @@ func NewImageService(r imageRepository, s3Repo s3Repository) *ImageService {
 	return &ImageService{repo: r, s3Repo: s3Repo}
 }
 
-func (s *ImageService) Upload(ctx context.Context, bucket, key, imageType string, object []byte) error {
+func (s *ImageService) Upload(ctx context.Context, bucket, imageType string, object []byte) error {
+	key := newS3Key(imageType)
+
 	err := s.s3Repo.PutObject(ctx, bucket, key, object)
 	if err != nil {
 		return err
@@ -59,6 +62,11 @@ func (s *ImageService) GetImages(ctx context.Context, userId int) ([]ImageMetada
 
 func (s *ImageService) DeleteImage(ctx context.Context, bucket, key string) error {
 	err := s.s3Repo.DeleteObject(ctx, bucket, key)
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.DeleteMetadata(ctx, key)
 	if err != nil {
 		return err
 	}

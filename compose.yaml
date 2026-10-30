@@ -15,12 +15,19 @@ services:
       context: backend
       dockerfile: Dockerfile
     ports:
-      - "8081:8080"
+      - "8082:8081"
     env_file:
       - .env
     depends_on:
       db:
         condition: service_healthy
+
+  api-gateway:
+    build:
+      context: api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
 
   db:
     image: postgres:17.9-alpine3.23
@@ -37,6 +44,17 @@ services:
       retries: 3
       timeout: 10s
       start_period: 30s
+
+  migrate:
+    image: migrate/migrate:v4.20.1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - "./backend/migrations:/migrations"
+    env_file:
+      - .env
+    command: ["-path", "/migrations", "-database", "${PG_URL}", "up"]
 
 volumes:
   s3data:

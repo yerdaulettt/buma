@@ -41,9 +41,9 @@ func main() {
 
 	r := http.NewServeMux()
 
-	r.HandleFunc("POST /upload", imageH.Upload)
-	r.HandleFunc("GET /my/images", imageH.GetImages)
-	r.HandleFunc("DELETE /images/{name}", imageH.DeleteImage)
+	r.HandleFunc("POST /api/upload", imageH.Upload)
+	r.HandleFunc("GET /api/my/images", imageH.GetImages)
+	r.HandleFunc("DELETE /api/images/{y}/{m}/{name}", imageH.DeleteImage)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8081", r))
 }

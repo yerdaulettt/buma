@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -51,7 +53,9 @@ func (s *s3Repository) GetObjectUrl(ctx context.Context, bucket, key string, lim
 		return "", err
 	}
 
-	return result.URL, nil
+	s3url := strings.TrimLeft(result.URL, os.Getenv("AWS_ENDPOINT_URL"))
+
+	return s3url, nil
 }
 
 func (s *s3Repository) DeleteObject(ctx context.Context, bucket, key string) error {

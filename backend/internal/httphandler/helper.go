@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 )
 
 var (
@@ -15,12 +16,14 @@ func httpError(w http.ResponseWriter, err error) {
 	w.Write([]byte(`{"error": "` + err.Error() + `"}`))
 }
 
-func checkContentType(cType string) error {
+func getImageType(contentType string) (string, error) {
 	correctTypes := []string{"image/jpeg", "image/png"}
 
-	if !slices.Contains(correctTypes, cType) {
-		return errContentType
+	if !slices.Contains(correctTypes, contentType) {
+		return "", errContentType
 	}
 
-	return nil
+	imageType := strings.Split(contentType, "/")
+
+	return imageType[1], nil
 }

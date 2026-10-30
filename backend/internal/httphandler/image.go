@@ -2,6 +2,7 @@ package httphandler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -17,7 +18,7 @@ func NewImageHandler(s *image.ImageService) *imageHandler {
 }
 
 func (h *imageHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	file, handler, err := r.FormFile("image")
+	file, _, err := r.FormFile("image")
 	if err != nil {
 		httpError(w, err)
 		return
@@ -30,15 +31,13 @@ func (h *imageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageType := http.DetectContentType(data)
-
-	err = checkContentType(imageType)
+	imageType, err := getImageType(http.DetectContentType(data))
 	if err != nil {
 		httpError(w, err)
 		return
 	}
 
-	err = h.service.Upload(r.Context(), "images", handler.Filename, imageType, data)
+	err = h.service.Upload(r.Context(), "images", imageType, data)
 	if err != nil {
 		httpError(w, err)
 		return
@@ -62,9 +61,11 @@ func (h *imageHandler) GetImages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *imageHandler) DeleteImage(w http.ResponseWriter, r *http.Request) {
+	year := r.PathValue("y")
+	month := r.PathValue("m")
 	name := r.PathValue("name")
 
-	err := h.service.DeleteImage(r.Context(), "images", name)
+	err := h.service.DeleteImage(r.Context(), "images", fmt.Sprintf("%s/%s/%s", year, month, name))
 	if err != nil {
 		httpError(w, err)
 		return
