@@ -9,6 +9,7 @@ import (
 
 var (
 	errContentType = errors.New("Incorrect content type")
+	errIdempotency = errors.New("Duplicate request")
 )
 
 func httpError(w http.ResponseWriter, err error) {
