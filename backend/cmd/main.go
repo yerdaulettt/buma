@@ -74,5 +74,6 @@ func main() {
 		Handler: httphandler.Idempotency(cache.NewRedisCache(redisClient), r),
 	}
 
+	// log.Fatal(server.ListenAndServe())
 	log.Fatal(server.ListenAndServeTLS("cert.crt", "cert.pem"))
 }

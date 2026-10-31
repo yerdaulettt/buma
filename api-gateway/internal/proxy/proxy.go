@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -20,6 +21,8 @@ func newProxy(serviceUrl string) (*httputil.ReverseProxy, error) {
 
 		r.Header.Set("X-Forwarded-For", r.RemoteAddr)
 	}
+
+	rp.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 
 	return rp, nil
 }

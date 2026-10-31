@@ -9,8 +9,8 @@ import (
 
 func main() {
 	services := map[string][]string{
-		"http://s3:8333":      {"GET /images/"},
-		"http://backend:8081": {"GET /api/my/images", "POST /api/upload", "DELETE /api/images/{y}/{m}/{name}"},
+		"http://localhost:8333":  {"GET /images/"},
+		"https://localhost:8081": {"GET /api/my/images", "POST /api/upload", "DELETE /api/images/{y}/{m}/{name}"},
 	}
 
 	r, err := proxy.GetRoutes(services)
@@ -19,5 +19,6 @@ func main() {
 	}
 
 	log.Println("Start")
-	log.Fatal(http.ListenAndServe(":8080", proxy.LogMiddleware(r)))
+	// log.Fatal(http.ListenAndServe(":8080", proxy.LogMiddleware(r)))
+	log.Fatal(http.ListenAndServeTLS(":8080", "cert.crt", "cert.pem", proxy.LogMiddleware(r)))
 }
